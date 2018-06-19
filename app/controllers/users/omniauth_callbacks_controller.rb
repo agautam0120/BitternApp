@@ -7,7 +7,25 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   # You should also create an action method in this controller like this:
   # def twitter
   # end
+  def google_oauth2
+    callback_from :google_oauth2
+  end
 
+  private
+
+  def callback_from(provider)
+    provider = provider.to_s
+
+    @user = Buser.find_for_oauth(request.env['omniauth.auth'])
+    
+    if @user.persisted?
+      sign_in_and_redirect @user, :event => :authentication #this will throw if @user is not activated
+      set_flash_message(:notice, :success, :kind => provider.capitalize) if is_navigational_format?
+    else
+      session["devise.#{provider}_data"] = request.env["omniauth.auth"]
+      redirect_to new_user_registration_url
+    end
+  end
   # More info at:
   # https://github.com/plataformatec/devise#omniauth
 
